@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎬 Tollywood Dialogue Quiz</title>
+<style>
+body { font-family: Arial, sans-serif; color: #fff; margin:0; padding:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background-color:#111; transition: background-image 1s; background-size:cover; background-position:center; }
+.container { background: rgba(0,0,0,0.85); padding:30px; border-radius:15px; box-shadow:0 10px 30px rgba(0,0,0,0.5); width:100%; max-width:700px; text-align:center; }
+h1 { color:#ffc107; margin-bottom:20px; font-size:2em; text-shadow:1px 1px 2px #000; }
+input[type="text"] { width: calc(100% - 22px); padding:12px; margin-bottom:20px; border:1px solid #ffc107; border-radius:8px; font-size:1.1em; background-color:#222; color:white; }
+button { background-color:#ffc107; color:#333; padding:10px 20px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; margin:5px; transition:0.3s; }
+button:hover { background-color:#e0a800; }
+.option-button { display:block; width:100%; margin-bottom:10px; padding:15px; background-color:#444; color:white; border:1px solid #666; text-align:left; transition:0.2s; cursor:not-allowed; opacity:0.6; }
+.option-button.enabled { cursor:pointer; opacity:1; }
+#dialogue-display { background-color: rgba(255,255,255,0.1); padding:15px; margin-bottom:10px; border-radius:10px; border:1px solid #ffc107; font-size:1.2em; font-style:italic; text-shadow:1px 1px 3px #000; display:none; }
+#hint-box { margin-top:20px; padding:15px; border:1px dashed #17a2b8; background-color: rgba(23,162,184,0.2); color:#17a2b8; border-radius:8px; text-align:left; display:none; }
+.feedback-message { margin-top:15px; font-weight:bold; font-size:1.2em; }
+.correct { color:#28a745; }
+.incorrect { color:#dc3545; }
+#back-button { position:absolute; top:15px; left:15px; background:#6c757d; color:white; padding:5px 10px; border:none; border-radius:5px; cursor:pointer; display:none; }
+#next-button { display:none; background:#17a2b8; color:white; }
+#movie-list { margin:15px 0; padding:10px; background:#222; border:1px solid #ffc107; border-radius:8px; display:none; text-align:left; }
+#toggle-list { background:#17a2b8; color:white; margin-bottom:10px; }
+</style>
+</head>
+<body>
+
+<button id="back-button" onclick="showPage('input-page')">⬅ Back</button>
+
+<div class="container">
+
+<!-- First Page: Movie Input -->
+
+<div id="input-page">
+    <h1>🎬 Tollywood Dialogue Quiz</h1>
+    <button id="toggle-list" onclick="toggleMovieList()">📜 Show/Hide Movie List</button>
+    <div id="movie-list">
+        Pokiri, Idiot, Jalsa, Simha, Indra, Legend, RRR, Bahubali, KGF, Salaar, Pushpa, Julayi
+    </div>
+    <input type="text" id="movie-input" placeholder="Enter movie name">
+    <button onclick="startQuiz()">Start Quiz</button>
+</div>
+
+<!-- Second Page: Quiz Interface -->
+
+<div id="quiz-page" style="display:none;">
+    <h1>Guess the Movie from the Dialogue!</h1>
+    <div id="dialogue-display"></div>
+    <button onclick="playDialogue()" id="replay-button">🔊 Play Dialogue</button>
+    <div id="options-container"></div>
+    <div class="feedback-message" id="quiz-feedback"></div>
+    <button onclick="showHint()" id="hint-button">💡 Get a Hint</button>
+    <div id="hint-box"><strong>Hint:</strong> <span id="hint-text"></span></div>
+    <button id="next-button" onclick="resetQuiz()">➡ Next Movie</button>
+</div>
+
+</div>
+
+<script>
+const dynamicMovieData = {
+"pokiri": {dialogue:"Evadu Kodite Dimma Tirigi Mind Block Ayipoddo Aade Pandu Gaadu", correctAnswer:"Pokiri", incorrectOptions:["Businessman","Okkadu","Jalsa"], hint:"Hero: Mahesh Babu. Directed by Puri Jagannadh.", bg:"https://images.unsplash.com/photo-1557683316-922659132204?fit=crop&w=1280&h=800"},
+"idiot": {dialogue:"Chantigadu Local!!!", correctAnswer:"Idiot", incorrectOptions:["Amma Nanna O Tamila Ammayi","Chanti","Neninthe"], hint:"Hero: Ravi Teja. Directed by Puri Jagannadh.", bg:"https://images.unsplash.com/photo-1522075782449-6f90d1f4d92e?fit=crop&w=1280&h=800"},
+"jalsa": {dialogue:"Yuddhamlo Gelavadam Ante Santruvuni Odinchadam, Champadam Kaadu", correctAnswer:"Jalsa", incorrectOptions:["Gudumba Shankar","Attarintiki Daredi","Kushi"], hint:"Hero: Pawan Kalyan. Directed by Trivikram Srinivas.", bg:"https://images.unsplash.com/photo-1533411075677-74846433e547?fit=crop&w=1280&h=800"},
+"simha": {dialogue:"Chudu Oka Vaipe Chudu Inko Vaipu Chudalanukoku Tattukolevu", correctAnswer:"Simha", incorrectOptions:["Chennakesava Reddy","Adhinayakudu","Narasimha Naidu"], hint:"Hero: Nandamuri Balakrishna. Directed by Boyapati Srinu.", bg:"https://images.unsplash.com/photo-1542838686-21f8a85f2618?fit=crop&w=1280&h=800"},
+"indra": {dialogue:"Veera Shankar Reddy… Mokke Kada Ani Peekeste Peeka Kostaa", correctAnswer:"Indra", incorrectOptions:["Tagore","Snehamante Idera","Mrugaraju"], hint:"Hero: Chiranjeevi. Directed by B. Gopal.", bg:"https://images.unsplash.com/photo-1627916962253-1574d39a319d?fit=crop&w=1280&h=800"},
+"legend": {dialogue:"Flute Jinka Mundu Oodu Simham Mundu Kaadu", correctAnswer:"Legend", incorrectOptions:["Simha","Samarasimha Reddy","Gautamiputra Satakarni"], hint:"Hero: Nandamuri Balakrishna. Directed by Boyapati Srinu.", bg:"https://images.unsplash.com/photo-1549488313-138981e85f02?fit=crop&w=1280&h=800"},
+"rrr": {dialogue:"Thongi thongi nakki nakke kaadu. Tokkuntu povali. Eduru vachinodini aeskuntu povali", correctAnswer:"RRR", incorrectOptions:["Bahubali","KGF","Salaar"], hint:"Directed by S.S. Rajamouli. Features N.T. Rama Rao Jr. and Ram Charan.", bg:"https://images.unsplash.com/photo-1635549348485-f8620d2b3d23?fit=crop&w=1280&h=800"},
+"bahubali": {dialogue:"Jai Mahishmati", correctAnswer:"Bahubali", incorrectOptions:["RRR","KGF","Salaar"], hint:"Directed by S.S. Rajamouli. Starring Prabhas and Rana Daggubati.", bg:"https://images.unsplash.com/photo-1554387106-2d0c89b3d8d3?fit=crop&w=1280&h=800"},
+"kgf": {dialogue:"Violence loves company.", correctAnswer:"KGF", incorrectOptions:["RRR","Bahubali","Salaar"], hint:"Directed by Prashanth Neel. Starring Yash.", bg:"https://images.unsplash.com/photo-1591195852387-6d0d2372fa22?fit=crop&w=1280&h=800"},
+"salaar": {dialogue:"Power is not given, it is taken.", correctAnswer:"Salaar", incorrectOptions:["RRR","Bahubali","KGF"], hint:"Directed by Prashanth Neel. Starring Prabhas.", bg:"https://images.unsplash.com/photo-1647389861030-97a3c7b5e91b?fit=crop&w=1280&h=800"},
+"pushpa": {dialogue:"World fire", correctAnswer:"Pushpa", incorrectOptions:["KGF","Salaar","RRR"], hint:"Hero: Allu Arjun. Directed by Sukumar.", bg:"https://images.unsplash.com/photo-1617084104164-7cdd8971e6f0?fit=crop&w=1280&h=800"},
+"julayi": {dialogue:"Aasha cancer unnavadini kuda brathikisthundi.. Bhayam ulcer unnavadini kuda champesthundi.", correctAnswer:"Julayi", incorrectOptions:["Idiot","Pokiri","Jalsa"], hint:"Hero: Allu Arjun. Directed by Trivikram Srinivas.", bg:"https://images.unsplash.com/photo-1603325734250-35b901b5e214?fit=crop&w=1280&h=800"}
+};
+
+let currentQuizData = null;
+let quizAttempted = false;
+let utterance;
+
+function toggleMovieList(){
+    const list = document.getElementById('movie-list');
+    list.style.display = list.style.display==='none' ? 'block':'none';
+}
+
+function showPage(page){
+    document.getElementById('input-page').style.display = page==='input-page' ? 'block':'none';
+    document.getElementById('quiz-page').style.display = page==='quiz-page' ? 'block':'none';
+    document.getElementById('back-button').style.display = page==='quiz-page' ? 'inline-block':'none';
+}
+
+function startQuiz(){
+    const movie = document.getElementById('movie-input').value.trim().toLowerCase();
+    if(!movie || !dynamicMovieData[movie]){
+        alert("Enter a valid movie from the list.");
+        return;
+    }
+    currentQuizData = dynamicMovieData[movie];
+    document.body.style.backgroundImage = `url('${currentQuizData.bg}')`;
+    document.getElementById('dialogue-display').style.display='none';
+    document.getElementById('quiz-feedback').textContent='';
+    document.getElementById('hint-text').textContent=currentQuizData.hint;
+    document.getElementById('hint-box').style.display='none';
+    document.getElementById('hint-button').disabled=false;
+    document.getElementById('next-button').style.display='none';
+    quizAttempted=false;
+
+    const allOptions = shuffleArray([currentQuizData.correctAnswer, ...currentQuizData.incorrectOptions]);
+    renderOptions(allOptions, false);
+
+    showPage('quiz-page');
+    playDialogue();
+}
+
+function renderOptions(options, enable=false){
+    const container=document.getElementById('options-container');
+    container.innerHTML='';
+    options.forEach(opt=>{
+        const btn = document.createElement('button');
+        btn.className='option-button';
+        if(enable) btn.classList.add('enabled');
+        btn.textContent = opt;
+        btn.disabled = !enable;
+        btn.onclick = () => checkAnswer(opt);
+        container.appendChild(btn);
+    });
+}
+
+function enableOptions(){
+    document.querySelectorAll('.option-button').forEach(b=>{
+        b.disabled=false;
+        b.classList.add('enabled');
+    });
+}
+
+function checkAnswer(selected){
+    if(quizAttempted) return;
+    quizAttempted=true;
+    const feedback = document.getElementById('quiz-feedback');
+    const dialogueDiv = document.getElementById('dialogue-display');
+    const nextBtn = document.getElementById('next-button');
+
+    document.querySelectorAll('.option-button').forEach(btn=>{
+        btn.disabled=true;
+        if(btn.textContent === currentQuizData.correctAnswer){
+            btn.style.backgroundColor='#28a745';
+            btn.style.color='white';
+            btn.style.fontWeight='bold';
+        }
+    });
+
+    dialogueDiv.style.display='block';
+    dialogueDiv.textContent=currentQuizData.dialogue;
+
+    if(selected === currentQuizData.correctAnswer){
+        feedback.textContent="Correct! 🎉";
+        feedback.className='feedback-message correct';
+    } else{
+        feedback.textContent="Incorrect ❌";
+        feedback.className='feedback-message incorrect';
+    }
+
+    nextBtn.style.display = 'inline-block';
+}
+
+function showHint(){
+    document.getElementById('hint-box').style.display='block';
+    document.getElementById('hint-button').disabled=true;
+    speakText(currentQuizData.hint);
+}
+
+function playDialogue(){
+    speakText(currentQuizData.dialogue);
+    enableOptions();
+}
+
+function speakText(text){
+    if(utterance) speechSynthesis.cancel();
+    utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'te-IN';
+    const voices = speechSynthesis.getVoices();
+    utterance.voice = voices.find(v => v.lang==='te-IN') || voices[0];
+    speechSynthesis.speak(utterance);
+}
+
+function shuffleArray(arr){
+    for(let i=arr.length-1;i>0;i--){
+        const j=Math.floor(Math.random()*(i+1));
+        [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+    return arr;
+}
+
+function resetQuiz(){
+    document.getElementById('movie-input').value='';
+    document.getElementById('dialogue-display').style.display='none';
+    document.getElementById('quiz-feedback').textContent='';
+    document.getElementById('hint-box').style.display='none';
+    document.getElementById('next-button').style.display='none';
+    showPage('input-page');
+}
+
+window.onload = ()=>showPage('input-page');
+</script>
+
+</body>
+</html>
